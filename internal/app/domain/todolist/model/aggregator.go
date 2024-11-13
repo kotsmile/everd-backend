@@ -3,7 +3,7 @@ package todolist_model
 import (
 	"fmt"
 
-	access_domain "github.com/kotsmile/everd-backend/internal/domain/access"
+	access_domain "github.com/kotsmile/everd-backend/internal/app/domain/access"
 )
 
 var ErrNotFound = fmt.Errorf("%w: todo is not found", Err)

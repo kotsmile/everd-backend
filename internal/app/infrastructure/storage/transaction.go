@@ -18,6 +18,10 @@ type SQLTransactionFactory struct {
 	db *sql.DB
 }
 
+func NewSQLTransactionFactory(db *sql.DB) *SQLTransactionFactory {
+	return &SQLTransactionFactory{db: db}
+}
+
 func (f *SQLTransactionFactory) WithTransaction(ctx context.Context, fn func(util.Transaction) error) error {
 	tx, err := f.db.BeginTx(ctx, nil)
 	if err != nil {

@@ -1,4 +1,4 @@
-package todlist_infrastructure
+package todolist_infrastructure
 
 import (
 	"context"
@@ -6,15 +6,19 @@ import (
 	"errors"
 	"time"
 
-	access_domain "github.com/kotsmile/everd-backend/internal/domain/access"
-	todolist_domain "github.com/kotsmile/everd-backend/internal/domain/todolist"
-	todolist_model "github.com/kotsmile/everd-backend/internal/domain/todolist/model"
-	"github.com/kotsmile/everd-backend/internal/infrastructure/storage"
+	access_domain "github.com/kotsmile/everd-backend/internal/app/domain/access"
+	todolist_domain "github.com/kotsmile/everd-backend/internal/app/domain/todolist"
+	todolist_model "github.com/kotsmile/everd-backend/internal/app/domain/todolist/model"
+	"github.com/kotsmile/everd-backend/internal/app/infrastructure/storage"
 	"github.com/kotsmile/everd-backend/internal/util"
 )
 
 type PostrgesTodoRepository struct {
 	db *sql.DB
+}
+
+func NewPostrgesTodoRepository(db *sql.DB) *PostrgesTodoRepository {
+	return &PostrgesTodoRepository{db: db}
 }
 
 var _ todolist_domain.TodoRepository = (*PostrgesTodoRepository)(nil)
@@ -85,6 +89,10 @@ func (r *PostrgesTodoRepository) NextID(
 
 type PostrgesTodolistRepository struct {
 	db *sql.DB
+}
+
+func NewPostrgesTodolistRepository(db *sql.DB) *PostrgesTodolistRepository {
+	return &PostrgesTodolistRepository{db: db}
 }
 
 var _ todolist_domain.TodolistRepository = (*PostrgesTodolistRepository)(nil)

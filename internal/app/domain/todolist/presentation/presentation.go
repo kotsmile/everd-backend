@@ -4,17 +4,17 @@ import (
 	"context"
 	"net/http"
 
-	access_domain "github.com/kotsmile/everd-backend/internal/domain/access"
-	todolist_domain "github.com/kotsmile/everd-backend/internal/domain/todolist"
+	access_domain "github.com/kotsmile/everd-backend/internal/app/domain/access"
+	todolist_domain "github.com/kotsmile/everd-backend/internal/app/domain/todolist"
 	"github.com/kotsmile/everd-backend/internal/util"
 )
 
 type TodolistHandler struct {
 	util.HTTPHandler
-	service todolist_domain.TodolistService
+	service *todolist_domain.TodolistService
 }
 
-func NewTodolistHandler(service todolist_domain.TodolistService) *TodolistHandler {
+func NewTodolistHandler(service *todolist_domain.TodolistService) *TodolistHandler {
 	return &TodolistHandler{
 		service: service,
 	}

@@ -3,6 +3,7 @@ package util
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -17,19 +18,18 @@ func (e *HTTPError) Error() string {
 }
 
 type HTTPError struct {
-	message string
-	status  int
+	message    string
+	statusCode int
 
-	err        error
-	errMessage string
+	err error
 }
 
 func NewHTTPError(message string) *HTTPError {
 	return &HTTPError{message: message}
 }
 
-func (e *HTTPError) WithStatus(status int) *HTTPError {
-	e.status = status
+func (e *HTTPError) WithStatus(statusCode int) *HTTPError {
+	e.statusCode = statusCode
 	return e
 }
 
@@ -39,7 +39,7 @@ func (e *HTTPError) WithError(err error) *HTTPError {
 }
 
 func (e *HTTPError) WithErrorMessage(errMessage string) *HTTPError {
-	e.errMessage = errMessage
+	e.err = errors.New(errMessage)
 	return e
 }
 
@@ -88,6 +88,39 @@ func (h *HTTPHandler) OkJSON(w http.ResponseWriter, data any) error {
 	if err := h.WriteJSON(w, http.StatusOK, JsonResponse{
 		Data: data,
 	}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (h *HTTPHandler) Wrapper(handler Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := handler(context.Background(), w, r); err != nil {
+			httpError, ok := err.(*HTTPError)
+			if !ok {
+				httpError = NewHTTPError("internal server error").
+					WithStatus(http.StatusInternalServerError).
+					WithError(err)
+			}
+
+			h.logger.WithField("status", httpError.statusCode).
+				WithField("message", httpError.message).
+				Errorf("%s", httpError.err)
+			if err := h.ErrorJSON(w, httpError.message, httpError.statusCode); err != nil {
+				h.logger.Errorf("failed to write error json: %s", err)
+			}
+		}
+	}
+}
+
+func (h *HTTPHandler) ErrorJSON(w http.ResponseWriter, message string, statusCode int) error {
+	var payload JsonResponse
+
+	payload.Error = true
+	payload.Message = message
+
+	if err := h.WriteJSON(w, statusCode, payload); err != nil {
 		return err
 	}
 

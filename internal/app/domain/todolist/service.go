@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	access_domain "github.com/kotsmile/everd-backend/internal/domain/access"
-	todolist_model "github.com/kotsmile/everd-backend/internal/domain/todolist/model"
+	access_domain "github.com/kotsmile/everd-backend/internal/app/domain/access"
+	todolist_model "github.com/kotsmile/everd-backend/internal/app/domain/todolist/model"
 	"github.com/kotsmile/everd-backend/internal/util"
 )
 
