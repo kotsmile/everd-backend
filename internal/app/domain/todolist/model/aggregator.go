@@ -92,10 +92,10 @@ func (l *Todolist) UncompleteTodo(todoID TodoID) error {
 	return ErrNotFound
 }
 
-func (l *Todolist) UpdateTitle(todoID TodoID, title string) error {
+func (l *Todolist) ChangeTitle(todoID TodoID, title string) error {
 	for _, todo := range l.todos {
 		if todo.id.Equal(todoID) {
-			todo.UpdateTitle(title)
+			todo.ChangeTitle(title)
 			return nil
 		}
 	}

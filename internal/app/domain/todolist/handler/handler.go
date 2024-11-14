@@ -1,4 +1,4 @@
-package todolist_presentation
+package todolist_handler
 
 import (
 	"context"
@@ -10,13 +10,14 @@ import (
 )
 
 type TodolistHandler struct {
-	util.HTTPHandler
+	*util.ApiHelper
 	service *todolist_domain.TodolistService
 }
 
-func NewTodolistHandler(service *todolist_domain.TodolistService) *TodolistHandler {
+func NewTodolistHandler(service *todolist_domain.TodolistService, apiHelper *util.ApiHelper) *TodolistHandler {
 	return &TodolistHandler{
-		service: service,
+		ApiHelper: apiHelper,
+		service:   service,
 	}
 }
 

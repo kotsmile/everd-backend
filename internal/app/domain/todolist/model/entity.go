@@ -102,11 +102,13 @@ func (t *Todo) Validate() error {
 	return nil
 }
 
-func (t *Todo) UpdateTitle(title string) {
+// TODO: add validation on new title
+func (t *Todo) ChangeTitle(title string) {
 	t.title = title
 	t.updatedAt = time.Now()
 }
 
+// TODO: add validation on new comment
 func (t *Todo) ChangeComment(comment string) {
 	t.comment = comment
 	t.updatedAt = time.Now()

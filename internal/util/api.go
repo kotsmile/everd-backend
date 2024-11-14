@@ -13,6 +13,12 @@ type Handler func(
 	r *http.Request,
 ) error
 
+type Middleware func(
+	ctx context.Context,
+	w http.ResponseWriter,
+	r *http.Request,
+) (context.Context, error)
+
 func (e *HTTPError) Error() string {
 	return "http error"
 }
@@ -49,11 +55,15 @@ type JsonResponse struct {
 	Data    any    `json:"data,omitempty"`
 }
 
-type HTTPHandler struct {
+type ApiHelper struct {
 	logger Logger
 }
 
-func (h *HTTPHandler) ReadJSON(
+func NewApiHelper(logger Logger) *ApiHelper {
+	return &ApiHelper{logger: logger}
+}
+
+func (h *ApiHelper) ReadJSON(
 	w http.ResponseWriter,
 	r *http.Request,
 	data any,
@@ -61,7 +71,7 @@ func (h *HTTPHandler) ReadJSON(
 	return json.NewDecoder(r.Body).Decode(data)
 }
 
-func (h *HTTPHandler) WriteJSON(
+func (h *ApiHelper) WriteJSON(
 	w http.ResponseWriter,
 	status int,
 	data any,
@@ -84,7 +94,7 @@ func (h *HTTPHandler) WriteJSON(
 	return err
 }
 
-func (h *HTTPHandler) OkJSON(w http.ResponseWriter, data any) error {
+func (h *ApiHelper) OkJSON(w http.ResponseWriter, data any) error {
 	if err := h.WriteJSON(w, http.StatusOK, JsonResponse{
 		Data: data,
 	}); err != nil {
@@ -94,27 +104,42 @@ func (h *HTTPHandler) OkJSON(w http.ResponseWriter, data any) error {
 	return nil
 }
 
-func (h *HTTPHandler) Wrapper(handler Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := handler(context.Background(), w, r); err != nil {
-			httpError, ok := err.(*HTTPError)
-			if !ok {
-				httpError = NewHTTPError("internal server error").
-					WithStatus(http.StatusInternalServerError).
-					WithError(err)
-			}
+func (h *ApiHelper) SendError(w http.ResponseWriter, r *http.Request, err error) {
+	httpError, ok := err.(*HTTPError)
+	if !ok {
+		httpError = NewHTTPError("internal server error").
+			WithStatus(http.StatusInternalServerError).
+			WithError(err)
+	}
 
-			h.logger.WithField("status", httpError.statusCode).
-				WithField("message", httpError.message).
-				Errorf("%s", httpError.err)
-			if err := h.ErrorJSON(w, httpError.message, httpError.statusCode); err != nil {
-				h.logger.Errorf("failed to write error json: %s", err)
+	h.logger.WithField("status", httpError.statusCode).
+		WithField("message", httpError.message).
+		Errorf("%s", httpError.err)
+	if err := h.ErrorJSON(w, httpError.message, httpError.statusCode); err != nil {
+		h.logger.Errorf("failed to write error json: %s", err)
+	}
+}
+
+func (h *ApiHelper) Wrapper(handler Handler, middlewares ...Middleware) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.Background()
+		for _, middleware := range middlewares {
+			var err error
+			ctx, err = middleware(ctx, w, r)
+			if err != nil {
+				h.SendError(w, r, err)
+				return
 			}
+		}
+
+		if err := handler(ctx, w, r); err != nil {
+			h.SendError(w, r, err)
+			return
 		}
 	}
 }
 
-func (h *HTTPHandler) ErrorJSON(w http.ResponseWriter, message string, statusCode int) error {
+func (h *ApiHelper) ErrorJSON(w http.ResponseWriter, message string, statusCode int) error {
 	var payload JsonResponse
 
 	payload.Error = true
